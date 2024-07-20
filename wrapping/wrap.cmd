@@ -16,7 +16,7 @@ xcopy /e /i scripts\%%ps.cmd working\%%p\
 xcopy %PROJECTDIR%\%%p\bin\Debug\net35\%%p.exe working\%%p\
 xcopy %PROJECTDIR%\%%p\bin\Debug\net35\%%p.exe.config working\%%p\
 xcopy %PROJECTDIR%\%%p\bin\Debug\net35\FluentCommandLineParser.dll working\%%p\
-xcopy %PROJECTDIR%\%%p\bin\Debug\net35\NewtonsoftJson.dll working\%%p\
+xcopy %PROJECTDIR%\%%p\bin\Debug\net35\Newtonsoft.Json.dll working\%%p\
 cd working\%%p
 %CMD7Z% a ..\..\apps\%%p.zip *.*
 cd ..\..
