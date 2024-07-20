@@ -7,7 +7,36 @@ This solution includes three projects, each producing a commandline tool targeti
 	- dfdcafc - Shadowrun Dragonfall Director's Cut Asset File Converter
 	- srhkafc - Shadowrun Hong Kong Asset File Converter
 
-The purpose of these tools is to allow conversion between human-readable JSON and .bytes files for the games.
+The purpose of these tools is to allow conversion between human-readable JSON and .bytes files for the games. Specifically, it avoids needing to
+dip into the editor (which can be a bit sluggish) in order to generate certain types of files for your content packs. If you are working with Unity
+asset files, that is an entirely different matter.
+
+Currently supported files (by .bytes extension):
+
+* ab.bytes (AbilityDef)
+* ai.bytes (ObjectiveArchetype)
+* ambi.bytes (AmbienceTemplate)
+* blib.bytes (BackerPCLibrary)
+* ch_inst.bytes (CharacterInstance)
+* ch_sht.bytes (Character)
+* convo.bytes (Conversation)
+* cpack.bytes (ProjectDef)
+* credits.bytes (It's just a string)
+* cvf.bytes (CharacterVariant; DFDC and SRHK only, SRR lacks the CharacterVariant class)
+* eq_sht.bytes (EquipmentSheet)
+* hiring.bytes (HiringSet)
+* item.bytes (ItemDef)
+* mf.bytes (Manifest; I see the files but I'm not sure they are used?)
+* mode.bytes (ModeDef)
+* pb.bytes (PropDef)
+* pcode.bytes (PortraitCodeList)
+* pl.bytes (PortraitList)
+* srm.bytes (MapDef)
+* srt.bytes (SceneDef)
+* story.bytes (StoryDef)
+* submix.bytes (SubMixGroup)
+* tml.bytes (TotemList)
+* topic.bytes (Topic)
 
 ## Why JSON?
 HBS used an (obviously) older version of [protobuf-net](https://github.com/protobuf-net/protobuf-net), a .NET implementation
