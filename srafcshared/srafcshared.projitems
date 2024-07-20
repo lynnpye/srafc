@@ -6,13 +6,14 @@
     <SharedGUID>a351a7c4-ee2c-49e3-b6dc-83aec127b29c</SharedGUID>
   </PropertyGroup>
   <PropertyGroup Label="Configuration">
-    <Import_RootNamespace>srafc</Import_RootNamespace>
+    <Import_RootNamespace>srafcshared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)AssetFormat.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)AssetType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HandleRequest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ObjectComparer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ProtoBufJsonConverter.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)SRAssetFileInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SRFileConverter.cs" />
   </ItemGroup>
 </Project>

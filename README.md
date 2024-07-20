@@ -34,3 +34,4 @@ convention e.g. eq_sht.bytes for an equipment sheet, .pl.bytes for a portrait li
 conversion you are attempting. If it can't figure it out, you can specify the type with the -y option.
 
 If you specify a folder it will attempt all files in the folder and the target must be a folder. The -y option will be required.
+
