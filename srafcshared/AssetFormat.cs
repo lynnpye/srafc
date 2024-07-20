@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace srafcshared
 {
@@ -12,30 +13,90 @@ namespace srafcshared
         bytes
     }
 
-    public class AssetFormatHandler
+    public abstract class BaseFormatHandler
     {
         public AssetFormat AssetFormat { get; private set; }
         public string Extension { get; private set; }
 
-        public AssetFormatHandler(AssetFormat assetFormat, string extension)
+        public BaseFormatHandler(AssetFormat assetFormat, string extension)
         {
             this.AssetFormat = assetFormat;
             this.Extension = extension;
+        }
+
+        public abstract T Deserialize<T>(string filename) where T : class;
+
+        public abstract void Serialize<T>(string filename, T obj) where T : class;
+    }
+
+    public class JsonFormatHandler : BaseFormatHandler
+    {
+        public JsonFormatHandler(AssetFormat assetFormat, string extension)
+            : base(assetFormat, extension)
+        {
+        }
+
+        public override T Deserialize<T>(string filename) where T : class
+        {
+            string jsonContent = File.ReadAllText(filename);
+            return SRFileConverter.ConvertFromJson<T>(jsonContent);
+        }
+
+        public override void Serialize<T>(string filename, T obj) where T : class
+        {
+            string jsonContent = SRFileConverter.ConvertToJson(obj);
+            File.WriteAllText(filename, jsonContent);
+        }
+    }
+
+    public class BytesFormatHandler : BaseFormatHandler
+    {
+        public BytesFormatHandler(AssetFormat assetFormat, string extension)
+            : base(assetFormat, extension)
+        {
+        }
+
+        public override T Deserialize<T>(string filename)
+        {
+            // handle some special cases
+            if (typeof(T) == typeof(string))
+            {
+                var bytes = SRFileConverter.LoadFileToBytes(filename);
+                return (T)(object)Encoding.UTF8.GetString(bytes);
+            }
+
+            // handle the standard cases
+            return SRFileConverter.Deserialize<T>(filename);
+        }
+
+        public override void Serialize<T>(string filename, T obj)
+        {
+            // handle some special cases
+            if (typeof(T) == typeof(string))
+            {
+                var bytes = Encoding.UTF8.GetBytes(obj as string);
+                File.WriteAllBytes(filename, bytes);
+
+                return;
+            }
+
+            // handle the standard cases
+            SRFileConverter.Serialize(filename, obj);
         }
     }
 
     public static class AssetFormatExtension
     {
-        public static Dictionary<AssetFormat, AssetFormatHandler> Handlers = new Dictionary<AssetFormat, AssetFormatHandler>();
+        public static Dictionary<AssetFormat, BaseFormatHandler> Handlers = new Dictionary<AssetFormat, BaseFormatHandler>();
 
-        public static AssetFormatHandler Handler(this AssetFormat assetFormat)
+        public static BaseFormatHandler Handler(this AssetFormat assetFormat)
         {
             if (!Handlers.ContainsKey(assetFormat))
             {
                 Handlers[assetFormat] = assetFormat switch
                 {
-                    AssetFormat.json => new AssetFormatHandler(assetFormat, ".json"),
-                    AssetFormat.bytes => new AssetFormatHandler(assetFormat, ".bytes"),
+                    AssetFormat.json => new JsonFormatHandler(assetFormat, ".json"),
+                    AssetFormat.bytes => new BytesFormatHandler(assetFormat, ".bytes"),
                     _ => throw new ArgumentException($"Unsupported format: {assetFormat}")
                 };
             }
@@ -96,40 +157,13 @@ namespace srafcshared
             {
                 return AssetFormat.unknown;
             }
-            return (AssetFormat) Enum.Parse(typeof(AssetFormat), extension.Substring(1), true);
-        }
-
-        public static T Deserialize<T>(this AssetFormat format, string filename) where T : class
-        {
-            switch (format)
+            try
             {
-                case AssetFormat.json:
-                    {
-                        string jsonContent = File.ReadAllText(filename);
-                        return SRFileConverter.ConvertFromJson<T>(jsonContent);
-                    }
-                case AssetFormat.bytes:
-                    return SRFileConverter.Deserialize<T>(filename);
-                default:
-                    throw new ArgumentException($"Unsupported format: {format}");
+                return (AssetFormat)Enum.Parse(typeof(AssetFormat), extension.Substring(1), true);
             }
-        }
-
-        public static void Serialize<T>(this AssetFormat format, string filename, T obj) where T : class
-        {
-            switch (format)
+            catch (Exception)
             {
-                case AssetFormat.json:
-                    {
-                        string jsonContent = SRFileConverter.ConvertToJson(obj);
-                        File.WriteAllText(filename, jsonContent);
-                        break;
-                    }
-                case AssetFormat.bytes:
-                    SRFileConverter.Serialize(filename, obj);
-                    break;
-                default:
-                    throw new ArgumentException($"Unsupported format: {format}");
+                return AssetFormat.unknown;
             }
         }
     }

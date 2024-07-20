@@ -10,30 +10,59 @@ namespace srafcshared
     public enum AssetType
     {
         unknown,
-        item,
-        pl,
-        pcode,
+        ab,
+        ai,
+        ambi,
+        blib,
+        ch_inst,
+        ch_sht,
+        convo,
         cpack,
+        credits,
+#if !SRR
+        cvf,
+#endif
+        eq_sht,
+        hiring,
+        item,
         mf,
+        mode,
+        pb,
+        pcode,
+        pl,
+        srm,
+        srt,
+        story,
+        submix,
+        tml,
+        topic,
     }
 
-    public class AssetTypeHandler
+    public abstract class BaseTypeHandler
     {
-        public AssetType AssetType {  get; private set; }
+        public AssetType AssetType { get; private set; }
         public string Extension { get; private set; }
         public Type Type { get; private set; }
 
-        public AssetTypeHandler(AssetType assetType, string extension, Type type)
+        public BaseTypeHandler(AssetType assetType, string extension, Type type)
         {
             this.AssetType = assetType;
             this.Extension = extension;
             this.Type = type;
         }
 
-        public void ProcessAssetFile(string infile, AssetFormat informat, string outfile, AssetFormat outformat)
-        {
-            var funcy = Expression.GetFuncType([typeof(AssetFormat), typeof(string), this.Type]);
+        public abstract void ProcessAssetFile(string infile, AssetFormat informat, string outfile, AssetFormat outformat);
+    }
 
+    public class AssetTypeHandler : BaseTypeHandler
+    {
+        public AssetTypeHandler(AssetType assetType, string extension, Type type)
+            : base(assetType, extension, type)
+        {
+        }
+
+        public override void ProcessAssetFile(string infile, AssetFormat informat, string outfile, AssetFormat outformat)
+        {
             typeof(AssetTypeHandler)
                 .GetMethod("StaticProcessAssetFile")
                 .MakeGenericMethod(this.Type)
@@ -42,14 +71,14 @@ namespace srafcshared
 
         public static void StaticProcessAssetFile<T>(string infile, AssetFormat informat, string outfile, AssetFormat outformat) where T : class
         {
-            T obj = informat.Deserialize<T>(infile);
+            T obj = informat.Handler().Deserialize<T>(infile);
 
             if (obj == null)
             {
                 throw new InvalidOperationException($"Failed to deserialize input file: {infile}");
             }
 
-            outformat.Serialize(outfile, obj);
+            outformat.Handler().Serialize(outfile, obj);
         }
     }
 
@@ -63,11 +92,32 @@ namespace srafcshared
             {
                 Handlers[assetType] = assetType switch
                 {
-                    AssetType.item => new AssetTypeHandler(assetType, ".item", typeof(ItemDef)),
-                    AssetType.pl => new AssetTypeHandler(assetType, ".pl", typeof(PortraitList)),
-                    AssetType.pcode => new AssetTypeHandler(assetType, ".pcode", typeof(PortraitCodeList)),
+                    AssetType.ab => new AssetTypeHandler(assetType, ".ab", typeof(AbilityDef)),
+                    AssetType.ai => new AssetTypeHandler(assetType, ".ai", typeof(ObjectiveArchetype)),
+                    AssetType.ambi => new AssetTypeHandler(assetType, ".ambi", typeof(AmbienceTemplate)),
+                    AssetType.blib => new AssetTypeHandler(assetType, ".blib", typeof(BackerPCLibrary)),
+                    AssetType.ch_inst => new AssetTypeHandler(assetType, ".ch_inst", typeof(CharacterInstance)),
+                    AssetType.ch_sht => new AssetTypeHandler(assetType, ".ch_sht", typeof(Character)),
+                    AssetType.convo => new AssetTypeHandler(assetType, ".convo", typeof(Conversation)),
                     AssetType.cpack => new AssetTypeHandler(assetType, ".cpack", typeof(ProjectDef)),
+                    AssetType.credits => new AssetTypeHandler(assetType, ".credits", typeof(string)),
+#if !SRR
+                    AssetType.cvf => new AssetTypeHandler(assetType, ".cvf", typeof(CharacterVariant)),
+#endif
+                    AssetType.eq_sht => new AssetTypeHandler(assetType, ".eq_sht", typeof(EquipmentSheet)),
+                    AssetType.hiring => new AssetTypeHandler(assetType, ".hiring", typeof(HiringSet)),
+                    AssetType.item => new AssetTypeHandler(assetType, ".item", typeof(ItemDef)),
                     AssetType.mf => new AssetTypeHandler(assetType, ".mf", typeof(Manifest)),
+                    AssetType.mode => new AssetTypeHandler(assetType, ".mode", typeof(ModeDef)),
+                    AssetType.pb => new AssetTypeHandler(assetType, ".pb", typeof(PropDef)),
+                    AssetType.pcode => new AssetTypeHandler(assetType, ".pcode", typeof(PortraitCodeList)),
+                    AssetType.pl => new AssetTypeHandler(assetType, ".pl", typeof(PortraitList)),
+                    AssetType.srm => new AssetTypeHandler(assetType, ".srm", typeof(MapDef)),
+                    AssetType.srt => new AssetTypeHandler(assetType, ".srt", typeof(SceneDef)),
+                    AssetType.story => new AssetTypeHandler(assetType, ".story", typeof(StoryDef)),
+                    AssetType.submix => new AssetTypeHandler(assetType, ".submix", typeof(SubMixGroup)),
+                    AssetType.tml => new AssetTypeHandler(assetType, ".tml", typeof(TotemList)),
+                    AssetType.topic => new AssetTypeHandler(assetType, ".topic", typeof(Topic)),
                     _ => throw new ArgumentException($"Unsupported asset type: {assetType}")
                 };
             }
@@ -124,16 +174,30 @@ namespace srafcshared
             }
             string fullFilename = fileInfo.FullName;
             var noExtension = Path.GetFileNameWithoutExtension(fullFilename);
-            if (string.IsNullOrEmpty(noExtension))
-            {
-                return AssetType.unknown;
-            }
             var extension = Path.GetExtension(noExtension);
+            string extensionToTest;
             if (string.IsNullOrEmpty(extension) || extension.Length < 2)
             {
+                // this would handle cases where the filename is <type>.<extension>
+                // for example, apparently (according to code), credits could be found at
+                // data/misc/credits.bytes
+                // and that's awesome
+                extensionToTest = noExtension;
+            }
+            else
+            {
+                extensionToTest = extension.Substring(1);
+            }
+
+            try
+            {
+                return (AssetType)Enum.Parse(typeof(AssetType), extensionToTest, true);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine($"Failed to parse asset type from filename:{fileInfo.FullName}: fullFilename;{fullFilename}: noExtension:{noExtension}: extension:{extension}:");
                 return AssetType.unknown;
             }
-            return (AssetType)Enum.Parse(typeof(AssetType), extension.Substring(1), true);
         }
     }
 }

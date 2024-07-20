@@ -6,7 +6,7 @@ namespace dfdcafc
     {
         public static void Main(string[] args)
         {
-            HandleRequest.InitWithArgs(nameof(dfdcafc), args);
+            HandleRequest.InitWithArgs(nameof(dfdcafc), args).HandleMain();
         }
     }
 }

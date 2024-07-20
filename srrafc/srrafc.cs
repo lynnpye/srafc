@@ -6,7 +6,7 @@ namespace srrafc
     {
         public static void Main(string[] args)
         {
-            HandleRequest.InitWithArgs(nameof(srrafc), args);
+            HandleRequest.InitWithArgs(nameof(srrafc), args).HandleMain();
         }
     }
 }

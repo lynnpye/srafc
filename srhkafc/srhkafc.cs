@@ -6,7 +6,7 @@ namespace srhkafc
     {
         public static void Main(string[] args)
         {
-            HandleRequest.InitWithArgs(nameof(srhkafc), args);
+            HandleRequest.InitWithArgs(nameof(srhkafc), args).HandleMain();
         }
     }
 }
